@@ -1,0 +1,469 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Data Portal Demo</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+JP:wght@400;500;700&family=IBM+Plex+Mono:wght@500;600&display=swap">
+<style>
+/* Layout: navy top bar + one fluid content column (max 1280px); each screen stacks panels that wrap to one column on phones. */
+:root{
+  --bg:#F4F6F8; --surface:#FFFFFF; --sunk:#EEF2F5; --line:#D5DCE2; --line-2:#E3E8EC;
+  --ink:#14202B; --ink-2:#4A5966; --bar:#14202B; --bar-ink:#F4F6F8; --bar-2:#C9D3DB; --bar-field:#1E2D3A; --bar-line:#3A4A58;
+  --accent:#0F5F6B; --accent-ink:#FFFFFF; --accent-soft:#E3F0F2;
+  --up:#1D4ED8; --up-soft:#E8EFFD; --up-muted:#AFC4EE; --down:#B4471B; --down-soft:#FBEBDD;
+  --f-body:"IBM Plex Sans JP","Hiragino Sans","Yu Gothic","Meiryo",system-ui,sans-serif;
+  --f-mono:"IBM Plex Mono",ui-monospace,Menlo,monospace;
+}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
+  --bg:#0E161C; --surface:#152029; --sunk:#1B2833; --line:#2C3C48; --line-2:#24333E;
+  --ink:#E4EBF0; --ink-2:#9DB0BD; --bar:#0A1116; --bar-ink:#E4EBF0; --bar-2:#9DB0BD; --bar-field:#152029; --bar-line:#2C3C48;
+  --accent:#5FC0CC; --accent-ink:#0A1116; --accent-soft:#163940;
+  --up:#7FA6F5; --up-soft:#1A2A4A; --up-muted:#34507F; --down:#F0915F; --down-soft:#3E2416; color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#0E161C; --surface:#152029; --sunk:#1B2833; --line:#2C3C48; --line-2:#24333E;
+  --ink:#E4EBF0; --ink-2:#9DB0BD; --bar:#0A1116; --bar-ink:#E4EBF0; --bar-2:#9DB0BD; --bar-field:#152029; --bar-line:#2C3C48;
+  --accent:#5FC0CC; --accent-ink:#0A1116; --accent-soft:#163940;
+  --up:#7FA6F5; --up-soft:#1A2A4A; --up-muted:#34507F; --down:#F0915F; --down-soft:#3E2416; color-scheme:dark}
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--ink);font-family:var(--f-body);font-size:15px;line-height:1.6}
+button,input,select{font:inherit;color:inherit}
+button{cursor:pointer}
+:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.num{font-family:var(--f-mono);font-variant-numeric:tabular-nums}
+.sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0)}
+h1,h2{margin:0;text-wrap:balance}
+h1{font-size:28px}
+h2{font-size:17px}
+p{margin:0}
+a{color:var(--accent)}
+
+header{background:var(--bar);color:var(--bar-ink);position:sticky;top:env(safe-area-inset-top,0px);z-index:5}
+.hbar{max-width:1280px;margin:0 auto;padding:12px 16px;display:flex;flex-wrap:wrap;align-items:center;gap:12px 24px}
+.logo{font-weight:700;font-size:17px;white-space:nowrap}
+.logo small{font-weight:400;font-size:12px;color:var(--bar-2);margin-left:8px}
+nav{display:flex;flex-wrap:wrap;gap:4px}
+nav button{border:0;background:transparent;color:var(--bar-2);padding:8px 12px;border-radius:8px;min-height:40px;font-size:14px}
+nav button[aria-current="page"]{color:var(--bar-ink);font-weight:700;background:var(--bar-field)}
+.hright{flex:1 1 260px;display:flex;justify-content:flex-end;gap:10px;align-items:center}
+.hright input{flex:0 1 320px;min-width:0;height:40px;border-radius:8px;border:1px solid var(--bar-line);background:var(--bar-field);color:var(--bar-ink);padding:0 12px;font-size:14px}
+.lang{display:inline-flex;border:1px solid var(--bar-line);border-radius:8px;overflow:hidden;flex:none}
+.lang button{border:0;background:transparent;color:var(--bar-2);min-width:48px;height:40px;font-size:13px}
+.lang button[aria-pressed="true"]{background:var(--bar-ink);color:var(--bar);font-weight:700}
+
+main{max-width:1280px;margin:0 auto;padding:28px 16px 56px;display:flex;flex-direction:column;gap:24px}
+.lede{display:flex;flex-direction:column;gap:6px}
+.lede p{color:var(--ink-2)}
+.notice{font-size:12.5px;color:var(--ink-2);border:1px dashed var(--line);border-radius:8px;padding:6px 10px;align-self:flex-start}
+.panel{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:20px 22px;display:flex;flex-direction:column;gap:14px;min-width:0}
+.phead{display:flex;justify-content:space-between;align-items:baseline;flex-wrap:wrap;gap:8px 16px}
+.meta{font-size:12.5px;color:var(--ink-2)}
+.row{display:flex;flex-wrap:wrap;gap:20px;align-items:flex-start}
+.grow{flex:999 1 560px;min-width:0}
+.side{flex:1 1 300px;min-width:0}
+.tiles{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:14px}
+.tile{text-align:left;background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:18px 20px;display:flex;flex-direction:column;gap:8px}
+.tile:hover{border-color:var(--accent)}
+.tile b{font-size:16px}
+.tile span{font-size:13.5px;color:var(--ink-2)}
+.tile em{font-style:normal;font-size:12.5px;color:var(--accent)}
+.tbl{overflow-x:auto}
+table{width:100%;border-collapse:collapse;font-size:14px}
+th{font-weight:500;font-size:12.5px;color:var(--ink-2);text-align:left;padding:8px 10px;border-bottom:1px solid var(--line);white-space:nowrap}
+td{padding:10px;border-bottom:1px solid var(--line-2);vertical-align:middle}
+.r{text-align:right}
+.up{color:var(--up);font-weight:700}
+.down{color:var(--down);font-weight:700}
+.flat{color:var(--ink-2)}
+tr.hl td{background:var(--up-soft)}
+.linkbtn{border:0;background:none;padding:0;color:var(--accent);text-decoration:underline;text-underline-offset:3px}
+.btn{min-height:44px;padding:0 18px;border-radius:8px;border:1px solid var(--accent);background:var(--accent);color:var(--accent-ink);font-size:14px;font-weight:700}
+.btn.ghost{background:transparent;color:var(--accent)}
+.btns{display:flex;flex-wrap:wrap;gap:10px}
+.chips{display:flex;flex-wrap:wrap;gap:8px}
+.chip{min-height:44px;padding:0 16px;border-radius:999px;border:1px solid var(--line);background:var(--surface);font-size:14px}
+.chip[aria-pressed="true"]{background:var(--accent);border-color:var(--accent);color:var(--accent-ink)}
+.kv{display:flex;justify-content:space-between;gap:12px;border-bottom:1px solid var(--line-2);padding-bottom:10px;font-size:14px}
+.kv:last-child{border-bottom:0;padding-bottom:0}
+.kv span:last-child{color:var(--ink-2);text-align:right}
+.stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px}
+.stat{background:var(--sunk);border-radius:8px;padding:10px 12px;display:flex;flex-direction:column;gap:2px}
+.stat span{font-size:12px;color:var(--ink-2)}
+.stat b{font-size:15px}
+.stat b.big{font-family:var(--f-mono);font-size:20px}
+.co-pick{display:flex;flex-wrap:wrap;gap:8px}
+.bars{display:flex;align-items:flex-end;gap:14px;height:220px;border-bottom:1px solid var(--line);padding:0 6px}
+.bcol{flex:1 1 0;display:flex;flex-direction:column;align-items:center;justify-content:flex-end;gap:6px;height:100%;min-width:0}
+.bcol i{display:block;width:100%;max-width:64px;border-radius:6px 6px 0 0;background:var(--up-muted)}
+.bcol i.last{background:var(--up)}
+.bcol b{font-family:var(--f-mono);font-size:13px}
+.blabels{display:flex;gap:14px;padding:0 6px}
+.blabels div{flex:1 1 0;min-width:0;text-align:center;display:flex;flex-direction:column;font-size:12px;color:var(--ink-2)}
+.blabels .num{color:var(--ink);font-size:12.5px}
+.comment{font-size:14.5px;line-height:1.8}
+.foot{margin-top:auto;border-top:1px solid var(--line-2);padding-top:12px;font-size:13px;color:var(--ink-2);display:flex;flex-direction:column;gap:6px}
+.datalist{display:flex;flex-wrap:wrap;gap:8px 28px;font-size:14px}
+.field{display:flex;flex-direction:column;gap:6px}
+.field label,.field .lab{font-size:13px;color:var(--ink-2)}
+.field select,.field input[type="text"]{height:44px;border-radius:8px;border:1px solid var(--line);background:var(--surface);padding:0 10px;font-size:14px;min-width:0;width:100%}
+.check{display:flex;gap:10px;align-items:center;font-size:14px;min-height:36px}
+.check input{width:20px;height:20px;accent-color:var(--accent)}
+.fresh{display:inline-block;padding:2px 10px;border-radius:999px;font-size:12.5px;font-weight:700;background:var(--accent-soft);color:var(--accent);white-space:nowrap}
+.fresh.old{background:var(--down-soft);color:var(--down)}
+.cobox{display:flex;flex-direction:column;gap:2px}
+.cobox span{font-size:12.5px;color:var(--ink-2)}
+.cell-check{display:inline-flex;align-items:center;justify-content:center;width:44px;height:44px}
+.cell-check input{width:20px;height:20px;accent-color:var(--accent)}
+.confirm{border:1px solid var(--accent);background:var(--accent-soft);border-radius:10px;padding:14px 16px;display:flex;flex-direction:column;gap:10px;font-size:14px}
+.toast{position:fixed;left:50%;transform:translateX(-50%);bottom:calc(20px + env(safe-area-inset-bottom,0px));background:var(--ink);color:var(--bg);padding:10px 18px;border-radius:8px;font-size:14px;z-index:9}
+.empty{color:var(--ink-2);font-size:14px;padding:12px 0}
+@media (max-width:560px){h1{font-size:23px}.hright{justify-content:flex-start}}
+</style>
+</head>
+<body style="margin:0">
+
+<header>
+  <div class="hbar">
+    <span class="logo">Data Portal<small id="t-concept"></small></span>
+    <nav id="nav" aria-label="main"></nav>
+    <div class="hright">
+      <label for="q" class="sr" id="t-search-label"></label>
+      <input id="q" type="search">
+      <div class="lang" role="group" aria-label="Language">
+        <button id="l-ja" type="button" aria-pressed="true">日本語</button>
+        <button id="l-en" type="button" aria-pressed="false">EN</button>
+      </div>
+    </div>
+  </div>
+</header>
+<main id="app" aria-live="polite"></main>
+<div class="toast" id="toast" hidden></div>
+
+<script>
+const T = {
+ja:{
+  concept:'提案用デモ・架空データ', search:'銘柄名・コードで検索', searchPh:'銘柄名・コードで検索',
+  nav:{home:'ホーム',company:'銘柄',builder:'データビルダー',unlisted:'未上場'},
+  notice:'企業名・数値・コメントはすべて架空です。商品の収録範囲は公開商品一覧（2024年4月）を参照しています。',
+  homeTitle:'今日は、何に使いますか？', homeLede:'業務を選ぶと、使うべきデータと受け取り方をご案内します。',
+  watchTitle:'ウォッチ銘柄の予想改定', watchMeta:'公表日の新しい順', thDate:'公表日', thCo:'銘柄', thItem:'項目', thGap:'会社計画との差',
+  opRev:'営業利益予想', contractTitle:'ご契約中のデータ', saved:'保存した取得条件を開く', rep:'担当営業：[担当者名] ・ 契約更新日 [YYYY-MM-DD]',
+  freqAny:'随時', freqDaily:'日次', freqMonthly:'月次・四半期',
+  coTitle:'今期の見通し：会社計画と東洋経済予想', coMeta:'2027年3月期（2026年4月〜2027年3月） ・ 単位：億円',
+  thField:'項目', thPlan:'会社計画', thEst:'東洋経済予想', thDiff:'乖離', thPrev:'前回予想（2026-09-12）',
+  sales:'売上高', op:'営業利益', ni:'純利益',
+  diffNote:'乖離 ＝（東洋経済予想 − 会社計画）÷ 会社計画。青は予想が計画を上回り、オレンジは下回ることを示します。',
+  revTitle:'営業利益予想の改定履歴（point-in-time）', revMeta:'各時点で公表されていた値 ・ 億円',
+  revNote:'公表日ごとの値を上書きせずに残すため、バックテストでは「その時点で分かっていた値」だけを使えます。',
+  revLabels:['期初','夏号','決算後','秋号','最新'],
+  cmtTitle:'記者コメント（四季報）', cmtFoot:'最終更新 2026-10-24 ・ 担当記者 [氏名]', cmtMore:'記事データもあわせて取得する',
+  addCond:'取得条件に追加', dlHist:'改定履歴をダウンロード', availTitle:'この銘柄で使えるデータ',
+  avail:['大株主（上位30位、1985年〜）','政策保有株式（2019年3月〜）','役員（1990年〜）','CSR（2006年版〜）','関係会社（1990年版〜）'],
+  bTitle:'データビルダー', bLede:'項目と受け取り方を選ぶと、右に項目定義が表示されます。', bUse:'用途',
+  s1:'1. 対象', s2:'2. 項目', s3:'3. 期間と時点', s4:'4. 受け取り方', period:'2005年4月 〜 2026年10月（月次スナップショット）',
+  pitOn:'point-in-time：オン（公表日ベース）', pitOff:'point-in-time：オフ（最新値のみ）',
+  pitNote:'各行に「公表日」を付け、その日時点で公表されていた値だけを返します。後の修正で過去の値は書き換わりません。',
+  previewTitle:'項目定義のプレビュー', colName:'項目名', colCol:'列名', colType:'型',
+  statCols:'項目数', statId:'銘柄の紐付け', statIdV:'証券コード／ISIN', statDel:'受け取り方',
+  getSample:'サンプル（50銘柄・3年分）を取得', reqQuote:'この条件で担当営業に見積もり依頼',
+  quoteNote:'見積もり依頼には選んだ条件がそのまま添付されるため、ヒアリングの往復が減ります。',
+  quoteSent:'見積もり依頼を送りました（デモ）。担当営業から連絡があります。', sampleToast:'サンプルを準備しました（デモ）',
+  confirmQuote:'次の条件で担当営業に送ります。よろしいですか？', send:'送信する', cancel:'取り消す',
+  uTitle:'未上場企業を探す', uLede:'M&A候補、融資・出資先、研究対象の絞り込みに。',
+  cond:'条件', ind:'業種', area:'本社所在地', all:'すべて', salesRange:'売上高（億円）', min:'下限', max:'上限', other:'その他',
+  overseasOnly:'海外拠点あり', latestOnly:'直近版に掲載がある企業のみ',
+  coverage:'収録：会社四季報 未上場会社版 WEB版 約20,000社、日本の会社データ 約42,000社（商品一覧 2024年4月時点）',
+  hits:'該当', companies:'社', sortNote:'売上高の大きい順 ・ 「情報の時点」で鮮度を確認できます',
+  thSel:'選択', thCompany:'企業', thArea:'所在地', thSales:'売上高（億円）', thOverseas:'海外拠点', thFresh:'情報の時点',
+  none:'なし', csv:'CSVで書き出す', toCrm:'選んだ企業を自社CRMへ送る', crmNote:'自社の取引先IDと照合して「新規候補」として登録します。既存の取引先は重複登録しません。',
+  noRows:'条件に合う企業がありません。条件をゆるめてください。', pickFirst:'先に企業を選んでください', crmSent:n=>`${n}社を自社CRMに新規候補として送りました（デモ）`, csvToast:'CSVを書き出しました（デモ）',
+  selectRow:n=>`${n}を選択`, ed:y=>`${y}年版`, pickCo:'銘柄を選ぶ',
+  uses:[
+    ['verify','会社計画の検証・乖離分析','四季報予想と会社計画を並べ、差の大きい銘柄を探す','東洋経済予想 ・ 四季報記事データ ・ Fundamentals','company'],
+    ['backtest','クオンツ・バックテスト','当時の値（point-in-time）で長期の時系列を取り出す','東洋経済予想 ・ Fundamentals ・ 大株主データ','builder'],
+    ['esg','ESG・ガバナンス分析','人材活用、株主構成、政策保有株式の変化を追う','CSRデータ ・ 政策保有株式データ ・ 役員データ','builder'],
+    ['integrate','自社システム・端末への組み込み','項目定義とID対応表を確認し、API・FTPで受け取る','TRENDEPO（RDB） ・ ベンダーフィード','builder'],
+    ['ma','M&A候補・与信の調査','業種・地域・規模で未上場企業を絞り込む','未上場会社版 ・ 日本の会社データ ・ 関係会社データ','unlisted'],
+    ['research','学術研究','研究用途の範囲で、必要な期間・項目だけを取得する','スポット提供 ・ 研究用ライセンス','builder']
+  ],
+  universes:{all:'全上場会社',smallcap:'中小型株',watch:'ウォッチリスト'},
+  deliveries:{csv:['CSVダウンロード','画面から都度ダウンロード。少量の分析向け。'],api:['API','自社システムから必要な分だけ取得。'],ftp:['FTP定期配信','決まった時刻にファイルを配信。過去分は初回に一括提供。'],rdb:['TRENDEPO（RDB）','リレーショナルDBとして社内システムに連携。']},
+  industries:{all:'すべて',elec:'電子部品・精密機器',mach:'機械',food:'食品'},
+  regions:{all:'すべて',tohoku:'東北',kanto:'関東',kansai:'関西'}
+},
+en:{
+  concept:'Concept demo · fictional data', search:'Search by company or code', searchPh:'Search by company or code',
+  nav:{home:'Home',company:'Company',builder:'Data Builder',unlisted:'Unlisted'},
+  notice:'All company names, figures and comments are fictional. Product coverage follows the public product list (April 2024).',
+  homeTitle:'What are you working on today?', homeLede:'Pick a task and we will show which data to use and how to receive it.',
+  watchTitle:'Forecast revisions on your watchlist', watchMeta:'Newest first', thDate:'Date', thCo:'Company', thItem:'Item', thGap:'vs. guidance',
+  opRev:'Operating profit forecast', contractTitle:'Your subscriptions', saved:'Open saved queries', rep:'Account manager: [Name] · Renewal [YYYY-MM-DD]',
+  freqAny:'As revised', freqDaily:'Daily', freqMonthly:'Monthly / quarterly',
+  coTitle:'This fiscal year: company guidance vs. Toyo Keizai estimate', coMeta:'FY ending March 2027 (Apr 2026 – Mar 2027) · JPY 100 million',
+  thField:'Item', thPlan:'Guidance', thEst:'TK estimate', thDiff:'Gap', thPrev:'Previous estimate (2026-09-12)',
+  sales:'Sales', op:'Operating profit', ni:'Net income',
+  diffNote:'Gap = (TK estimate − guidance) ÷ guidance. Blue means the estimate is above guidance; orange means below.',
+  revTitle:'Operating profit estimate history (point-in-time)', revMeta:'Value as published on each date · JPY 100 million',
+  revNote:'Every published value is kept, never overwritten, so a backtest uses only what was known at the time.',
+  revLabels:['FY start','Summer','Post-results','Autumn','Latest'],
+  cmtTitle:'Analyst comment (Shikiho)', cmtFoot:'Updated 2026-10-24 · Analyst [Name]', cmtMore:'Add comment data to my query',
+  addCond:'Add to query', dlHist:'Download revision history', availTitle:'Other data for this company',
+  avail:['Major shareholders (top 30, since 1985)','Cross shareholdings (since Mar 2019)','Board members (since 1990)','CSR (since 2006 edition)','Affiliates (since 1990 edition)'],
+  bTitle:'Data Builder', bLede:'Choose fields and delivery; the field definitions appear on the right.', bUse:'Use case',
+  s1:'1. Universe', s2:'2. Fields', s3:'3. Period and timing', s4:'4. Delivery', period:'Apr 2005 – Oct 2026 (monthly snapshots)',
+  pitOn:'Point-in-time: on (by announcement date)', pitOff:'Point-in-time: off (latest values only)',
+  pitNote:'Each row carries its announcement date and returns only what was published by then. Later revisions never rewrite past values.',
+  previewTitle:'Field definitions', colName:'Field', colCol:'Column', colType:'Type',
+  statCols:'Fields', statId:'Security ID', statIdV:'Local code / ISIN', statDel:'Delivery',
+  getSample:'Get a sample (50 stocks, 3 years)', reqQuote:'Request a quote with this query',
+  quoteNote:'Your query is attached to the request, so your account manager can reply without a round of questions.',
+  quoteSent:'Quote request sent (demo). Your account manager will be in touch.', sampleToast:'Sample prepared (demo)',
+  confirmQuote:'Send this query to your account manager?', send:'Send', cancel:'Cancel',
+  uTitle:'Find unlisted companies', uLede:'Screen for M&A targets, lending or investment prospects, and research samples.',
+  cond:'Filters', ind:'Industry', area:'Head office', all:'All', salesRange:'Sales (JPY 100 million)', min:'Min', max:'Max', other:'Other',
+  overseasOnly:'Has overseas operations', latestOnly:'Listed in the latest edition only',
+  coverage:'Coverage: Shikiho Unlisted Companies (web) about 20,000 companies; Japanese Companies data about 42,000 (product list, April 2024)',
+  hits:'', companies:'companies', sortNote:'Sorted by sales · check freshness in “As of”',
+  thSel:'Select', thCompany:'Company', thArea:'Location', thSales:'Sales (JPY 100m)', thOverseas:'Overseas', thFresh:'As of',
+  none:'None', csv:'Export CSV', toCrm:'Send selected to my CRM', crmNote:'Matched against your account IDs and added as new prospects. Existing accounts are not duplicated.',
+  noRows:'No companies match. Try widening the filters.', pickFirst:'Select at least one company first', crmSent:n=>`Sent ${n} companies to your CRM as new prospects (demo)`, csvToast:'CSV exported (demo)',
+  selectRow:n=>`Select ${n}`, ed:y=>`${y} edition`, pickCo:'Choose a company',
+  uses:[
+    ['verify','Check company guidance','Compare Shikiho estimates with guidance and find the largest gaps','TK estimates · Shikiho comments · Fundamentals','company'],
+    ['backtest','Quant backtesting','Pull long histories as they were known at the time (point-in-time)','TK estimates · Fundamentals · Major shareholders','builder'],
+    ['esg','ESG and governance','Track human capital, ownership and cross shareholdings','CSR data · Cross shareholdings · Board members','builder'],
+    ['integrate','Feed your own platform','Check field definitions and ID maps, then receive by API or FTP','TRENDEPO (RDB) · Vendor feed','builder'],
+    ['ma','M&A and credit research','Screen unlisted companies by industry, region and size','Unlisted companies · Japanese Companies · Affiliates','unlisted'],
+    ['research','Academic research','Take only the periods and fields your study needs','Spot delivery · Research licence','builder']
+  ],
+  universes:{all:'All listed',smallcap:'Small and mid caps',watch:'Watchlist'},
+  deliveries:{csv:['CSV download','Download from the screen. Best for small analyses.'],api:['API','Pull exactly what you need from your own systems.'],ftp:['Scheduled FTP','Files delivered at a fixed time. Full history in the first delivery.'],rdb:['TRENDEPO (RDB)','Relational database linked to your internal systems.']},
+  industries:{all:'All',elec:'Electronics and precision',mach:'Machinery',food:'Food'},
+  regions:{all:'All',tohoku:'Tohoku',kanto:'Kanto',kansai:'Kansai'}
+}};
+
+const COS = [
+  {code:'9999', ja:'サンプル精機', en:'Sample Precision', ind:{ja:'機械 ・ 東証プライム',en:'Machinery · TSE Prime'}, plan:[1200,125,85], est:[1240,135,88], prev:[1220,128,86], rev:[118,122,126,128,135], date:'2026-10-24',
+   cmt:{ja:['【上振れ】受注が想定を上回る。[根拠を2〜3文で]','【注目】[中長期の論点を1〜2文で]'],en:['[Upside] Orders above plan. [Reasoning in 2–3 sentences]','[Watch] [Longer-term point in 1–2 sentences]']}},
+  {code:'9998', ja:'みなと化成', en:'Minato Chemical', ind:{ja:'化学 ・ 東証プライム',en:'Chemicals · TSE Prime'}, plan:[2000,180,120], est:[1910,165,110], prev:[1950,172,115], rev:[185,182,176,172,165], date:'2026-10-22',
+   cmt:{ja:['【下振れ】原料高が重荷。[根拠を2〜3文で]','【注目】[中長期の論点を1〜2文で]'],en:['[Downside] Higher input costs. [Reasoning in 2–3 sentences]','[Watch] [Longer-term point in 1–2 sentences]']}},
+  {code:'9997', ja:'あおば物流', en:'Aoba Logistics', ind:{ja:'陸運 ・ 東証スタンダード',en:'Land transport · TSE Standard'}, plan:[800,48,30], est:[800,48,30], prev:[800,48,30], rev:[46,47,48,48,48], date:'2026-10-17',
+   cmt:{ja:['【据え置き】計画どおりに進む。[根拠を2〜3文で]','【注目】[中長期の論点を1〜2文で]'],en:['[Unchanged] On track with plan. [Reasoning in 2–3 sentences]','[Watch] [Longer-term point in 1–2 sentences]']}}
+];
+const REV_DATES = ['2026-03','2026-06','2026-08','2026-09','2026-10'];
+
+const FIELDS = [
+  ['est',{ja:'東洋経済予想',en:'TK estimates'},[[{ja:'予想売上高',en:'Forecast sales'},'est_sales','decimal'],[{ja:'予想営業利益',en:'Forecast operating profit'},'est_op','decimal']]],
+  ['fund',{ja:'財務（実績）',en:'Fundamentals'},[[{ja:'売上高（実績）',en:'Sales (actual)'},'act_sales','decimal']]],
+  ['major',{ja:'大株主',en:'Major shareholders'},[[{ja:'大株主名',en:'Shareholder name'},'holder_name','text'],[{ja:'持株比率',en:'Holding ratio'},'holding_pct','decimal']]],
+  ['cross',{ja:'政策保有株式',en:'Cross shareholdings'},[[{ja:'保有先コード',en:'Held company code'},'held_code','text']]],
+  ['csr',{ja:'CSR',en:'CSR (ESG)'},[[{ja:'女性管理職比率',en:'Female manager ratio'},'female_mgr_pct','decimal']]],
+  ['comment',{ja:'四季報記事',en:'Shikiho comments'},[[{ja:'記者コメント',en:'Analyst comment'},'comment_text','text']]]
+];
+
+const UNLISTED = [
+  {ja:'北杜テック',en:'Hokuto Tech',biz:{ja:'産業用センサー',en:'Industrial sensors'},ind:'elec',reg:'tohoku',pref:{ja:'宮城県',en:'Miyagi'},sales:210,os:{ja:'タイ、ベトナム',en:'Thailand, Vietnam'},y:2026},
+  {ja:'あさひ光学',en:'Asahi Optics',biz:{ja:'光学レンズ',en:'Optical lenses'},ind:'elec',reg:'tohoku',pref:{ja:'山形県',en:'Yamagata'},sales:160,os:{ja:'中国',en:'China'},y:2026},
+  {ja:'くりこま電子',en:'Kurikoma Electronics',biz:{ja:'電子部品',en:'Electronic parts'},ind:'elec',reg:'tohoku',pref:{ja:'宮城県',en:'Miyagi'},sales:120,os:{ja:'マレーシア',en:'Malaysia'},y:2026},
+  {ja:'さんりく精工',en:'Sanriku Seiko',biz:{ja:'精密加工',en:'Precision machining'},ind:'mach',reg:'tohoku',pref:{ja:'岩手県',en:'Iwate'},sales:95,os:{ja:'ベトナム',en:'Vietnam'},y:2025},
+  {ja:'あいづ計測',en:'Aizu Instruments',biz:{ja:'計測機器',en:'Measuring instruments'},ind:'elec',reg:'tohoku',pref:{ja:'福島県',en:'Fukushima'},sales:70,os:{ja:'アメリカ',en:'United States'},y:2026},
+  {ja:'おうう部品',en:'Ou Parts',biz:{ja:'電子部品',en:'Electronic parts'},ind:'elec',reg:'tohoku',pref:{ja:'秋田県',en:'Akita'},sales:45,os:null,y:2025},
+  {ja:'むさし機工',en:'Musashi Kiko',biz:{ja:'産業機械',en:'Industrial machinery'},ind:'mach',reg:'kanto',pref:{ja:'埼玉県',en:'Saitama'},sales:260,os:{ja:'インドネシア',en:'Indonesia'},y:2026},
+  {ja:'ちば食品工業',en:'Chiba Foods',biz:{ja:'加工食品',en:'Processed foods'},ind:'food',reg:'kanto',pref:{ja:'千葉県',en:'Chiba'},sales:180,os:null,y:2026},
+  {ja:'なにわ精密',en:'Naniwa Precision',biz:{ja:'精密部品',en:'Precision parts'},ind:'elec',reg:'kansai',pref:{ja:'大阪府',en:'Osaka'},sales:140,os:{ja:'台湾',en:'Taiwan'},y:2026},
+  {ja:'みちのく製菓',en:'Michinoku Confectionery',biz:{ja:'菓子',en:'Confectionery'},ind:'food',reg:'tohoku',pref:{ja:'青森県',en:'Aomori'},sales:60,os:null,y:2025}
+];
+
+let S = {lang:'ja', view:'home', co:0, universe:'smallcap', picked:{est:true,fund:true,major:false,cross:false,csr:false,comment:false}, pit:true, delivery:'ftp', useCase:'backtest', confirmQuote:false,
+  f:{ind:'elec', reg:'tohoku', min:'30', max:'300', overseas:true, latest:true}, sel:new Set()};
+try { const l = localStorage.getItem('dp-lang'); if (l === 'en' || l === 'ja') S.lang = l; } catch(e) {}
+
+const $ = s => document.querySelector(s);
+const esc = s => String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const t = () => T[S.lang];
+const nm = o => o[S.lang];
+const fmt = n => n.toLocaleString(S.lang === 'ja' ? 'ja-JP' : 'en-US');
+const pct = (a,b) => (a - b) / b * 100;
+const gapCell = v => { const s = v > 0.05 ? 'up' : v < -0.05 ? 'down' : 'flat'; const sign = v > 0.05 ? '+' : v < -0.05 ? '−' : '±'; return `<span class="${s} num">${sign}${Math.abs(v).toFixed(1)}%</span>`; };
+
+function toast(m){ const el = $('#toast'); el.textContent = m; el.hidden = false; clearTimeout(toast.t); toast.t = setTimeout(() => el.hidden = true, 2600); }
+
+function go(view){ S.view = view; S.confirmQuote = false; render(); window.scrollTo(0,0); }
+
+function renderChrome(){
+  const L = t();
+  document.documentElement.lang = S.lang;
+  $('#t-concept').textContent = L.concept;
+  $('#t-search-label').textContent = L.search;
+  $('#q').placeholder = L.searchPh;
+  $('#l-ja').setAttribute('aria-pressed', S.lang === 'ja');
+  $('#l-en').setAttribute('aria-pressed', S.lang === 'en');
+  $('#nav').innerHTML = ['home','company','builder','unlisted'].map(v => `<button type="button" data-go="${v}" ${S.view===v?'aria-current="page"':''}>${esc(L.nav[v])}</button>`).join('');
+}
+
+function viewHome(){
+  const L = t();
+  const tiles = L.uses.map(u => `<button type="button" class="tile" data-use="${u[0]}" data-target="${u[4]}"><b>${esc(u[1])}</b><span>${esc(u[2])}</span><em>${esc(u[3])}</em></button>`).join('');
+  const rows = COS.map((c,i) => { const g = pct(c.est[1], c.plan[1]); return `<tr><td class="num">${c.date}</td><td><button type="button" class="linkbtn" data-co="${i}">${esc(nm(c))}（${c.code}）</button></td><td>${esc(L.opRev)}</td><td class="r">${gapCell(g)}</td></tr>`; }).join('');
+  return `<div class="lede"><h1>${esc(L.homeTitle)}</h1><p>${esc(L.homeLede)}</p></div>
+  <p class="notice">${esc(L.notice)}</p>
+  <div class="tiles">${tiles}</div>
+  <div class="row">
+    <section class="panel grow"><div class="phead"><h2>${esc(L.watchTitle)}</h2><span class="meta">${esc(L.watchMeta)}</span></div>
+      <div class="tbl"><table style="min-width:520px"><thead><tr><th>${esc(L.thDate)}</th><th>${esc(L.thCo)}</th><th>${esc(L.thItem)}</th><th class="r">${esc(L.thGap)}</th></tr></thead><tbody>${rows}</tbody></table></div></section>
+    <section class="panel side"><h2>${esc(L.contractTitle)}</h2>
+      <div class="kv"><span>${esc(FIELDS[0][1][S.lang])}</span><span>${esc(L.freqAny)}</span></div>
+      <div class="kv"><span>Fundamentals</span><span>${esc(L.freqDaily)}</span></div>
+      <div class="kv"><span>${esc(FIELDS[2][1][S.lang])}</span><span>${esc(L.freqMonthly)}</span></div>
+      <button type="button" class="linkbtn" data-go="builder" style="align-self:flex-start;font-weight:700">${esc(L.saved)} →</button>
+      <p class="meta">${esc(L.rep)}</p></section>
+  </div>`;
+}
+
+function viewCompany(){
+  const L = t(), c = COS[S.co];
+  const pick = COS.map((x,i) => `<button type="button" class="chip" data-co="${i}" aria-pressed="${i===S.co}">${esc(nm(x))} ${x.code}</button>`).join('');
+  const items = [L.sales, L.op, L.ni];
+  const rows = items.map((it,k) => `<tr class="${k===1?'hl':''}"><td${k===1?' style="font-weight:700"':''}>${esc(it)}</td><td class="r num">${fmt(c.plan[k])}</td><td class="r num" style="font-weight:700">${fmt(c.est[k])}</td><td class="r">${gapCell(pct(c.est[k], c.plan[k]))}</td><td class="r num flat">${fmt(c.prev[k])}</td></tr>`).join('');
+  const top = Math.max(...c.rev) * 1.08;
+  const bars = c.rev.map((v,i) => `<div class="bcol"><b>${v}</b><i class="${i===c.rev.length-1?'last':''}" style="height:${Math.round(v/top*180)}px"></i></div>`).join('');
+  const labels = REV_DATES.map((d,i) => `<div><span class="num">${d}</span><span>${esc(L.revLabels[i])}</span></div>`).join('');
+  return `<div class="phead" style="align-items:flex-end">
+      <div class="lede"><span class="meta">${esc(c.ind[S.lang])}</span><h1>${esc(nm(c))} <span class="num" style="font-size:20px;color:var(--ink-2)">${c.code}</span></h1></div>
+      <div class="btns"><button type="button" class="btn ghost" data-go="builder">${esc(L.addCond)}</button><button type="button" class="btn" data-act="dl">${esc(L.dlHist)}</button></div>
+    </div>
+    <div class="field"><span class="lab">${esc(L.pickCo)}</span><div class="co-pick">${pick}</div></div>
+    <section class="panel"><div class="phead"><h2>${esc(L.coTitle)}</h2><span class="meta">${esc(L.coMeta)}</span></div>
+      <div class="tbl"><table style="min-width:640px"><thead><tr><th>${esc(L.thField)}</th><th class="r">${esc(L.thPlan)}</th><th class="r">${esc(L.thEst)}</th><th class="r">${esc(L.thDiff)}</th><th class="r">${esc(L.thPrev)}</th></tr></thead><tbody>${rows}</tbody></table></div>
+      <p class="meta">${esc(L.diffNote)}</p></section>
+    <div class="row" style="align-items:stretch">
+      <section class="panel grow"><div class="phead"><h2>${esc(L.revTitle)}</h2><span class="meta">${esc(L.revMeta)}</span></div>
+        <div class="bars" role="img" aria-label="${esc(L.revTitle)}: ${c.rev.join(', ')}">${bars}</div>
+        <div class="blabels" aria-hidden="true">${labels}</div>
+        <p class="meta">${esc(L.revNote)}</p></section>
+      <section class="panel side"><h2>${esc(L.cmtTitle)}</h2>${c.cmt[S.lang].map(p => `<p class="comment">${esc(p)}</p>`).join('')}
+        <div class="foot"><span>${esc(L.cmtFoot)}</span><button type="button" class="linkbtn" data-go="builder" style="align-self:flex-start;font-weight:700">${esc(L.cmtMore)} →</button></div></section>
+    </div>
+    <section class="panel"><h2>${esc(L.availTitle)}</h2><div class="datalist">${L.avail.map(a => `<span>${esc(a)}</span>`).join('')}</div></section>`;
+}
+
+function schema(){
+  const k = S.lang;
+  const out = [{n:{ja:'証券コード',en:'Security code'}, c:'security_code', ty:'text'}, {n:{ja:'決算期',en:'Fiscal period'}, c:'fiscal_period', ty:'yyyymm'}];
+  if (S.pit) out.push({n:{ja:'公表日',en:'Announcement date'}, c:'announce_date', ty:'date'});
+  FIELDS.forEach(([id,,cols]) => { if (S.picked[id]) cols.forEach(([n,c,ty]) => out.push({n,c,ty})); });
+  return out.map(r => ({name:r.n[k], col:r.c, type:r.ty}));
+}
+
+function viewBuilder(){
+  const L = t();
+  const useName = (L.uses.find(u => u[0] === S.useCase) || L.uses[1])[1];
+  const uni = Object.entries(L.universes).map(([id,l]) => `<button type="button" class="chip" data-uni="${id}" aria-pressed="${S.universe===id}">${esc(l)}</button>`).join('');
+  const flds = FIELDS.map(([id,n]) => `<button type="button" class="chip" data-field="${id}" aria-pressed="${!!S.picked[id]}">${esc(n[S.lang])}</button>`).join('');
+  const dels = Object.entries(L.deliveries).map(([id,[l]]) => `<button type="button" class="chip" data-del="${id}" aria-pressed="${S.delivery===id}">${esc(l)}</button>`).join('');
+  const sc = schema();
+  const rows = sc.map(r => `<tr><td>${esc(r.name)}</td><td class="num">${r.col}</td><td class="num flat">${r.type}</td></tr>`).join('');
+  const del = L.deliveries[S.delivery];
+  const picked = FIELDS.filter(([id]) => S.picked[id]).map(([,n]) => n[S.lang]).join(S.lang==='ja'?'、':', ');
+  const confirm = S.confirmQuote ? `<div class="confirm" role="group" aria-label="${esc(L.confirmQuote)}"><b>${esc(L.confirmQuote)}</b>
+      <span>${esc(L.universes[S.universe])} ・ ${esc(picked || '—')} ・ ${esc(S.pit ? L.pitOn : L.pitOff)} ・ ${esc(del[0])}</span>
+      <div class="btns"><button type="button" class="btn" data-act="send-quote">${esc(L.send)}</button><button type="button" class="btn ghost" data-act="cancel-quote">${esc(L.cancel)}</button></div></div>` : '';
+  return `<div class="lede"><h1>${esc(L.bTitle)}</h1><p>${esc(L.bLede)} ${esc(L.bUse)}：${esc(useName)}</p></div>
+    <div class="row">
+      <div class="side" style="display:flex;flex-direction:column;gap:16px;flex-basis:400px">
+        <section class="panel"><h2>${esc(L.s1)}</h2><div class="chips">${uni}</div></section>
+        <section class="panel"><h2>${esc(L.s2)}</h2><div class="chips">${flds}</div></section>
+        <section class="panel"><h2>${esc(L.s3)}</h2><p style="font-size:14px">${esc(L.period)}</p>
+          <button type="button" class="chip" data-act="pit" aria-pressed="${S.pit}" style="align-self:flex-start">${esc(S.pit ? L.pitOn : L.pitOff)}</button>
+          ${S.pit ? `<p class="meta" style="color:var(--accent)">${esc(L.pitNote)}</p>` : ''}</section>
+        <section class="panel"><h2>${esc(L.s4)}</h2><div class="chips">${dels}</div><p class="meta">${esc(del[1])}</p></section>
+      </div>
+      <section class="panel grow"><div class="phead"><h2>${esc(L.previewTitle)}</h2></div>
+        <div class="tbl"><table style="min-width:480px"><thead><tr><th>${esc(L.colName)}</th><th>${esc(L.colCol)}</th><th>${esc(L.colType)}</th></tr></thead><tbody>${rows}</tbody></table></div>
+        <div class="stats"><div class="stat"><span>${esc(L.statCols)}</span><b class="big">${sc.length}</b></div><div class="stat"><span>${esc(L.statId)}</span><b>${esc(L.statIdV)}</b></div><div class="stat"><span>${esc(L.statDel)}</span><b>${esc(del[0])}</b></div></div>
+        <div class="btns"><button type="button" class="btn" data-act="sample">${esc(L.getSample)}</button><button type="button" class="btn ghost" data-act="quote">${esc(L.reqQuote)}</button></div>
+        ${confirm}
+        <p class="meta">${esc(L.quoteNote)}</p></section>
+    </div>`;
+}
+
+function filtered(){
+  const f = S.f, lo = parseFloat(f.min), hi = parseFloat(f.max);
+  return UNLISTED.map((r,i) => ({...r, i})).filter(r =>
+    (f.ind === 'all' || r.ind === f.ind) && (f.reg === 'all' || r.reg === f.reg) &&
+    (isNaN(lo) || r.sales >= lo) && (isNaN(hi) || r.sales <= hi) &&
+    (!f.overseas || r.os) && (!f.latest || r.y === 2026)
+  ).sort((a,b) => b.sales - a.sales);
+}
+
+function viewUnlisted(){
+  const L = t(), f = S.f, list = filtered();
+  const opt = (obj, cur) => Object.entries(obj).map(([k,v]) => `<option value="${k}" ${cur===k?'selected':''}>${esc(v)}</option>`).join('');
+  const rows = list.map(r => `<tr><td><label class="cell-check"><input type="checkbox" data-sel="${r.i}" ${S.sel.has(r.i)?'checked':''} aria-label="${esc(L.selectRow(nm(r)))}"></label></td>
+    <td><div class="cobox"><b>${esc(nm(r))}</b><span>${esc(r.biz[S.lang])}</span></div></td><td>${esc(r.pref[S.lang])}</td><td class="r num">${fmt(r.sales)}</td>
+    <td>${r.os ? esc(r.os[S.lang]) : `<span class="flat">${esc(L.none)}</span>`}</td><td><span class="fresh ${r.y===2026?'':'old'}">${esc(L.ed(r.y))}</span></td></tr>`).join('');
+  const hit = S.lang === 'ja' ? `${L.hits} <span class="num">${list.length}</span> ${L.companies}` : `<span class="num">${list.length}</span> ${L.companies}`;
+  return `<div class="phead" style="align-items:flex-end"><div class="lede"><h1>${esc(L.uTitle)}</h1><p>${esc(L.uLede)}</p></div>
+      <div class="btns"><button type="button" class="btn ghost" data-act="csv">${esc(L.csv)}</button><button type="button" class="btn" data-act="crm">${esc(L.toCrm)}</button></div></div>
+    <p class="notice">${esc(L.notice)}</p>
+    <div class="row">
+      <aside class="panel side" style="flex-basis:280px"><h2>${esc(L.cond)}</h2>
+        <div class="field"><label for="f-ind">${esc(L.ind)}</label><select id="f-ind" data-f="ind">${opt(L.industries, f.ind)}</select></div>
+        <div class="field"><label for="f-reg">${esc(L.area)}</label><select id="f-reg" data-f="reg">${opt(L.regions, f.reg)}</select></div>
+        <div class="field"><span class="lab">${esc(L.salesRange)}</span><div style="display:flex;gap:8px;align-items:center">
+          <label for="f-min" class="sr">${esc(L.min)}</label><input id="f-min" type="text" inputmode="numeric" data-f="min" value="${esc(f.min)}">
+          <span class="flat">〜</span>
+          <label for="f-max" class="sr">${esc(L.max)}</label><input id="f-max" type="text" inputmode="numeric" data-f="max" value="${esc(f.max)}"></div></div>
+        <div class="field"><span class="lab">${esc(L.other)}</span>
+          <label class="check"><input type="checkbox" data-f="overseas" ${f.overseas?'checked':''}>${esc(L.overseasOnly)}</label>
+          <label class="check"><input type="checkbox" data-f="latest" ${f.latest?'checked':''}>${esc(L.latestOnly)}</label></div>
+        <p class="meta">${esc(L.coverage)}</p></aside>
+      <section class="panel grow"><div class="phead"><h2>${hit}</h2><span class="meta">${esc(L.sortNote)}</span></div>
+        ${list.length ? `<div class="tbl"><table style="min-width:720px"><thead><tr><th>${esc(L.thSel)}</th><th>${esc(L.thCompany)}</th><th>${esc(L.thArea)}</th><th class="r">${esc(L.thSales)}</th><th>${esc(L.thOverseas)}</th><th>${esc(L.thFresh)}</th></tr></thead><tbody>${rows}</tbody></table></div>` : `<p class="empty">${esc(L.noRows)}</p>`}
+        <p class="meta">${esc(L.crmNote)}</p></section>
+    </div>`;
+}
+
+function render(){
+  renderChrome();
+  const v = {home:viewHome, company:viewCompany, builder:viewBuilder, unlisted:viewUnlisted}[S.view];
+  $('#app').innerHTML = v();
+}
+
+document.addEventListener('click', e => {
+  const b = e.target.closest('button'); if (!b) return;
+  if (b.id === 'l-ja' || b.id === 'l-en'){ S.lang = b.id === 'l-en' ? 'en' : 'ja'; try { localStorage.setItem('dp-lang', S.lang); } catch(e) {} render(); return; }
+  if (b.dataset.go){ go(b.dataset.go); return; }
+  if (b.dataset.use){ S.useCase = b.dataset.use; go(b.dataset.target); return; }
+  if (b.dataset.co !== undefined){ S.co = +b.dataset.co; if (S.view !== 'company') go('company'); else render(); return; }
+  if (b.dataset.uni){ S.universe = b.dataset.uni; render(); return; }
+  if (b.dataset.field){ S.picked[b.dataset.field] = !S.picked[b.dataset.field]; render(); return; }
+  if (b.dataset.del){ S.delivery = b.dataset.del; render(); return; }
+  const a = b.dataset.act, L = t();
+  if (a === 'pit'){ S.pit = !S.pit; render(); }
+  if (a === 'sample') toast(L.sampleToast);
+  if (a === 'quote'){ S.confirmQuote = true; render(); }
+  if (a === 'cancel-quote'){ S.confirmQuote = false; render(); }
+  if (a === 'send-quote'){ S.confirmQuote = false; render(); toast(L.quoteSent); }
+  if (a === 'dl') toast(L.sampleToast);
+  if (a === 'csv') toast(L.csvToast);
+  if (a === 'crm'){ const n = filtered().filter(r => S.sel.has(r.i)).length; toast(n ? L.crmSent(n) : L.pickFirst); }
+});
+document.addEventListener('change', e => {
+  const el = e.target;
+  if (el.dataset.sel !== undefined){ const i = +el.dataset.sel; el.checked ? S.sel.add(i) : S.sel.delete(i); return; }
+  if (el.dataset.f){ S.f[el.dataset.f] = el.type === 'checkbox' ? el.checked : el.value; render(); const again = document.querySelector(`[data-f="${el.dataset.f}"]`); if (again && el.type !== 'checkbox') again.focus(); }
+});
+$('#q').addEventListener('keydown', e => {
+  if (e.key !== 'Enter') return;
+  const q = e.target.value.trim().toLowerCase(); if (!q) return;
+  const i = COS.findIndex(c => c.code.includes(q) || c.ja.includes(q) || c.en.toLowerCase().includes(q));
+  if (i >= 0){ S.co = i; go('company'); } else toast(S.lang === 'ja' ? '該当する銘柄がありません（デモは3銘柄のみ）' : 'No match (this demo has three companies)');
+});
+render();
+</script>
+
+</body>
+</html>
